@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Append-only trail of territory / rep changes: rows are never updated or deleted. -->
+    <changeSet id="005-create-account-ownership-history-table" author="crm">
+        <createTable tableName="account_ownership_history">
+            <column name="history_id" type="UUID">
+                <constraints primaryKey="true" primaryKeyName="pk_account_ownership_history" nullable="false"/>
+            </column>
+            <column name="account_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Keycloak subject of the previous owner; null for an initial assignment. -->
+            <column name="from_owner_id" type="UUID"/>
+            <!-- Keycloak subject of the new owner. -->
+            <column name="to_owner_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Keycloak subject of the user who made the change. -->
+            <column name="changed_by" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="account_ownership_history"
+                baseColumnNames="account_id"
+                referencedTableName="accounts"
+                referencedColumnNames="account_id"
+                constraintName="fk_account_ownership_history_account"
+                onDelete="CASCADE"/>
+
+        <createIndex tableName="account_ownership_history"
+                     indexName="idx_account_ownership_history_account_id_changed_at">
+            <column name="account_id"/>
+            <column name="changed_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
