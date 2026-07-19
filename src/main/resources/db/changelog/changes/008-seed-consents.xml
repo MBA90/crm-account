@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+      Sample consents for local/dev use only (context "dev"). contact_id values
+      reference the contacts seeded in 004-seed-contacts.xml.
+    -->
+    <changeSet id="008-seed-consents" author="crm" context="dev">
+
+        <!-- Alice Turner: marketing email opt-in via web form -->
+        <insert tableName="consents">
+            <column name="consent_id" value="d1111111-1111-1111-1111-111111111111"/>
+            <column name="contact_id" value="c1111111-1111-1111-1111-111111111111"/>
+            <column name="channel" value="email"/>
+            <column name="purpose" value="marketing"/>
+            <column name="granted" valueBoolean="true"/>
+            <column name="source" value="web_form"/>
+        </insert>
+
+        <!-- Alice Turner: transactional SMS agreed in the contract -->
+        <insert tableName="consents">
+            <column name="consent_id" value="d2222222-2222-2222-2222-222222222222"/>
+            <column name="contact_id" value="c1111111-1111-1111-1111-111111111111"/>
+            <column name="channel" value="sms"/>
+            <column name="purpose" value="transactional"/>
+            <column name="granted" valueBoolean="true"/>
+            <column name="source" value="contract"/>
+        </insert>
+
+        <!-- Clara Baumann: marketing phone consent given verbally, later withdrawn -->
+        <insert tableName="consents">
+            <column name="consent_id" value="d3333333-3333-3333-3333-333333333333"/>
+            <column name="contact_id" value="c3333333-3333-3333-3333-333333333333"/>
+            <column name="channel" value="phone"/>
+            <column name="purpose" value="marketing"/>
+            <column name="granted" valueBoolean="false"/>
+            <column name="source" value="verbal_logged"/>
+            <column name="withdrawn_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="consents">
+                <where>consent_id in (
+                    'd1111111-1111-1111-1111-111111111111',
+                    'd2222222-2222-2222-2222-222222222222',
+                    'd3333333-3333-3333-3333-333333333333')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
