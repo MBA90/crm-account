@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-create-contacts-table" author="crm">
+        <createTable tableName="contacts">
+            <column name="contact_id" type="UUID">
+                <constraints primaryKey="true" primaryKeyName="pk_contacts" nullable="false"/>
+            </column>
+            <column name="account_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(320)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone" type="VARCHAR(20)"/>
+            <column name="mobile" type="VARCHAR(20)"/>
+            <column name="job_title" type="VARCHAR(255)"/>
+            <column name="department" type="VARCHAR(255)"/>
+            <column name="is_primary" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="decision_role" type="VARCHAR(20)"/>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="contacts"
+                baseColumnNames="account_id"
+                referencedTableName="accounts"
+                referencedColumnNames="account_id"
+                constraintName="fk_contacts_account"
+                onDelete="CASCADE"/>
+
+        <!-- Email is unique per account, NOT globally. -->
+        <addUniqueConstraint
+                tableName="contacts"
+                columnNames="account_id, email"
+                constraintName="uq_contacts_account_id_email"/>
+
+        <createIndex tableName="contacts" indexName="idx_contacts_account_id_status">
+            <column name="account_id"/>
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Postgres-specific: functional index for case-insensitive cross-account lookup. -->
+    <changeSet id="003b-contacts-lower-email-index" author="crm" dbms="postgresql">
+        <sql>CREATE INDEX idx_contacts_lower_email ON contacts (LOWER(email))</sql>
+        <rollback>DROP INDEX idx_contacts_lower_email</rollback>
+    </changeSet>
+
+    <!-- Postgres-specific: at most one primary contact per account. -->
+    <changeSet id="003c-contacts-primary-partial-unique" author="crm" dbms="postgresql">
+        <sql>CREATE UNIQUE INDEX uq_contacts_one_primary_per_account
+             ON contacts (account_id) WHERE is_primary = true</sql>
+        <rollback>DROP INDEX uq_contacts_one_primary_per_account</rollback>
+    </changeSet>
+
+</databaseChangeLog>

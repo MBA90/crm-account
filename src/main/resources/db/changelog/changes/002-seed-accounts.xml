@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+      Sample accounts for local/dev use only. Guarded by context "dev" so it is
+      skipped unless liquibase is run with that context active
+      (see spring.liquibase.contexts in application.yaml).
+    -->
+    <changeSet id="002-seed-accounts" author="crm" context="dev">
+
+        <!-- Parent: a large enterprise (customer) -->
+        <insert tableName="accounts">
+            <column name="account_id" value="11111111-1111-1111-1111-111111111111"/>
+            <column name="legal_name" value="Globex Corporation"/>
+            <column name="trade_name" value="Globex"/>
+            <column name="registration_no" value="CR-1001"/>
+            <column name="tax_id" value="VAT-1001"/>
+            <column name="industry" value="Manufacturing"/>
+            <column name="employee_band" value="1000+"/>
+            <column name="country" value="US"/>
+            <column name="city" value="New York"/>
+            <column name="website" value="https://globex.example.com"/>
+            <column name="account_type" value="customer"/>
+            <column name="owner_id" value="a0000000-0000-0000-0000-000000000001"/>
+            <column name="source" value="admin_panel"/>
+            <column name="status" value="Active"/>
+        </insert>
+
+        <!-- Child: a subsidiary of Globex -->
+        <insert tableName="accounts">
+            <column name="account_id" value="22222222-2222-2222-2222-222222222222"/>
+            <column name="legal_name" value="Globex Logistics LLC"/>
+            <column name="trade_name" value="Globex Logistics"/>
+            <column name="registration_no" value="CR-1002"/>
+            <column name="tax_id" value="VAT-1002"/>
+            <column name="industry" value="Transportation"/>
+            <column name="employee_band" value="201-1000"/>
+            <column name="country" value="US"/>
+            <column name="city" value="Chicago"/>
+            <column name="website" value="https://logistics.globex.example.com"/>
+            <column name="parent_account_id" value="11111111-1111-1111-1111-111111111111"/>
+            <column name="account_type" value="customer"/>
+            <column name="owner_id" value="a0000000-0000-0000-0000-000000000001"/>
+            <column name="source" value="import"/>
+            <column name="status" value="Active"/>
+        </insert>
+
+        <!-- A prospect -->
+        <insert tableName="accounts">
+            <column name="account_id" value="33333333-3333-3333-3333-333333333333"/>
+            <column name="legal_name" value="Initech GmbH"/>
+            <column name="registration_no" value="CR-2001"/>
+            <column name="tax_id" value="VAT-2001"/>
+            <column name="industry" value="Software"/>
+            <column name="employee_band" value="51-200"/>
+            <column name="country" value="DE"/>
+            <column name="city" value="Berlin"/>
+            <column name="website" value="https://initech.example.com"/>
+            <column name="account_type" value="prospect"/>
+            <column name="owner_id" value="a0000000-0000-0000-0000-000000000002"/>
+            <column name="source" value="api"/>
+            <column name="status" value="Active"/>
+        </insert>
+
+        <!-- A partner -->
+        <insert tableName="accounts">
+            <column name="account_id" value="44444444-4444-4444-4444-444444444444"/>
+            <column name="legal_name" value="Umbrella Consulting Ltd"/>
+            <column name="trade_name" value="Umbrella"/>
+            <column name="registration_no" value="CR-3001"/>
+            <column name="tax_id" value="VAT-3001"/>
+            <column name="industry" value="Consulting"/>
+            <column name="employee_band" value="11-50"/>
+            <column name="country" value="GB"/>
+            <column name="city" value="London"/>
+            <column name="account_type" value="partner"/>
+            <column name="owner_id" value="a0000000-0000-0000-0000-000000000002"/>
+            <column name="source" value="admin_panel"/>
+            <column name="status" value="Active"/>
+        </insert>
+
+        <!-- A reseller that is currently inactive -->
+        <insert tableName="accounts">
+            <column name="account_id" value="55555555-5555-5555-5555-555555555555"/>
+            <column name="legal_name" value="Hooli Trading FZE"/>
+            <column name="registration_no" value="CR-4001"/>
+            <column name="tax_id" value="VAT-4001"/>
+            <column name="industry" value="Retail"/>
+            <column name="employee_band" value="1-10"/>
+            <column name="country" value="AE"/>
+            <column name="city" value="Dubai"/>
+            <column name="account_type" value="reseller"/>
+            <column name="owner_id" value="a0000000-0000-0000-0000-000000000003"/>
+            <column name="source" value="import"/>
+            <column name="status" value="Inactive"/>
+            <column name="deactivated_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="accounts">
+                <where>account_id in (
+                    '11111111-1111-1111-1111-111111111111',
+                    '22222222-2222-2222-2222-222222222222',
+                    '33333333-3333-3333-3333-333333333333',
+                    '44444444-4444-4444-4444-444444444444',
+                    '55555555-5555-5555-5555-555555555555')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
