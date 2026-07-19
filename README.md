@@ -29,10 +29,10 @@ Defaults:
 
 | Setting        | Default                                |
 |----------------|----------------------------------------|
-| Server port    | `8201`                                 |
+| Server port    | `8202`                                 |
 | Datasource URL | `jdbc:postgresql://localhost:5432/crm` |
-| Username       | `crm_ACCOUNT`                         |
-| Schema         | `crm_ACCOUNT`                         |
+| Username       | `crm_ACCOUNT`                          |
+| Schema         | `crm_ACCOUNT`                          |
 
 Liquibase runs on startup using `classpath:db/changelog/master.xml` to create the
 `ACCOUNTS` table, sequence, and indexes. JPA `ddl-auto` is `none` — the schema is
@@ -79,7 +79,7 @@ apply the changelog on the next application start.
 ./mvnw test
 ```
 
-The service starts on http://localhost:8201.
+The service starts on http://localhost:8202.
 
 ## API
 
@@ -103,10 +103,10 @@ A `Dockerfile` is provided that packages the built JAR on top of an
 docker build -t crm-ACCOUNT .
 ```
 
-Run the container, mapping the service's port (8201):
+Run the container, mapping the service's port (8202):
 
 ```bash
-docker run --rm -p 8201:8201 crm-ACCOUNT
+docker run --rm -p 8202:8202 crm-ACCOUNT
 ```
 
 ## CI/CD

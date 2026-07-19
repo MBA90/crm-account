@@ -6,6 +6,6 @@ WORKDIR /app
 ADD target/*.jar app.jar
 
 # Your application runs on 8080 inside the container
-EXPOSE 8201
+EXPOSE 8202
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
