@@ -9,4 +9,8 @@
     <include file="db/changelog/changes/002-seed-accounts.xml"/>
     <include file="db/changelog/changes/003-create-contacts-table.xml"/>
     <include file="db/changelog/changes/004-seed-contacts.xml"/>
+    <include file="db/changelog/changes/005-create-account-ownership-history-table.xml"/>
+    <include file="db/changelog/changes/006-seed-account-ownership-history.xml"/>
+    <include file="db/changelog/changes/007-create-consents-table.xml"/>
+    <include file="db/changelog/changes/008-seed-consents.xml"/>
 </databaseChangeLog>
