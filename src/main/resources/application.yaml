@@ -26,9 +26,6 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/master.xml
     default-schema: crm_account
-    # Enables the dev-only seed changeset (002-seed-accounts). Remove/override
-    # this (e.g. set an empty value) in non-dev environments.
-    contexts: dev
 
 server:
   port: 8202
