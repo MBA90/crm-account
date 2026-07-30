@@ -7,7 +7,7 @@ managed by Liquibase.
 ## Tech Stack
 
 - Java 21
-- Spring Boot 3.5.15 (Web, Data JPA, Validation)
+- Spring Boot 3.5.15 (Web, Data JPA, Validation, Security, OAuth2 Resource Server)
 - PostgreSQL (`postgresql` JDBC driver)
 - Liquibase (schema migrations)
 - MapStruct 1.5.5 (entity/DTO mapping)
@@ -108,6 +108,47 @@ Run the container, mapping the service's port (8202):
 ```bash
 docker run --rm -p 8202:8202 crm-ACCOUNT
 ```
+
+## 🔐 Security
+
+This service is a pure **OAuth2 resource server** — it validates bearer JWTs
+issued by a Keycloak realm on every request. There's no login flow or session
+state here; Keycloak owns authentication, this service only enforces it.
+
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/crm-realm
+```
+
+Spring uses that issuer to auto-discover Keycloak's JWKS and verify each
+token's signature, expiry, and issuer. Only `/api/**` is locked down
+(`SecurityConfig`); everything else is `permitAll()`. Sessions are stateless
+and CSRF is disabled — bearer tokens don't need either.
+
+### From token to typed principal
+
+Keycloak ships roles under `realm_access.roles`, not the `scope` claim Spring
+expects by default, and hands you a raw `Jwt` rather than a domain object. Two
+small converters close that gap:
+
+| Class                       | Job                                                          |
+|------------------------------|---------------------------------------------------------------|
+| `KeycloakRealmRoleConverter` | maps `realm_access.roles` → `ROLE_*` authorities              |
+| `UserPrincipalJwtConverter`  | builds a typed `UserPrincipal` (userId, username, email, name, department, phone, mobile) as the authentication's principal |
+
+Anywhere in the codebase, `SecurityUtil.getUserPrincipal()`.
+
+### Who can call what
+
+Role names live as constants in `SecurityRoles` (`ORG_ADMIN`, `SALES_REP`,
+`ACCOUNT_MANAGER`, `MARKETING_MANAGER`, `SALES_MANAGER`), ready for per-endpoint
+`@PreAuthorize` checks as they're added. Today the security filter chain only
+requires an authenticated principal on `/api/**` — it does not yet
+differentiate access by role.
 
 ## CI/CD
 
