@@ -5,6 +5,8 @@ import com.crm.account.domain.enums.AccountStatus;
 import com.crm.account.domain.enums.AccountType;
 import com.crm.account.domain.enums.EmployeeBand;
 import com.crm.account.dto.AccountDTO;
+import com.crm.account.dto.AccountSearchCriteriaDTO;
+import com.crm.account.dto.PageRequestDTO;
 import com.crm.account.exception.DuplicateResourceException;
 import com.crm.account.exception.ResourceNotFoundException;
 import com.crm.account.service.AccountService;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,44 +52,69 @@ class AccountControllerTest {
     private final UUID accountId = UUID.randomUUID();
     private final UUID ownerId = UUID.randomUUID();
 
+    private static final AccountSearchCriteriaDTO NO_FILTERS =
+            new AccountSearchCriteriaDTO(null, null, null, null, null, null);
+
     @Test
-    @DisplayName("GET /api/accounts lists every account when no filter is given")
+    @DisplayName("POST /api/accounts/search lists every account when no filter is given")
     void listAll() throws Exception {
-        when(accountService.getAll()).thenReturn(List.of(accountDTO(AccountStatus.ACTIVE)));
+        when(accountService.search(eq(NO_FILTERS)))
+                .thenReturn(new PageImpl<>(List.of(accountDTO(AccountStatus.ACTIVE))));
 
-        mockMvc.perform(get("/api/accounts"))
+        mockMvc.perform(post("/api/accounts/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(NO_FILTERS)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)))
-                .andExpect(jsonPath("$[0].accountId").value(accountId.toString()))
-                .andExpect(jsonPath("$[0].accountType").value("prospect"))
-                .andExpect(jsonPath("$[0].status").value("Active"));
-
-        verify(accountService, never()).getByOwner(any(), any());
+                .andExpect(jsonPath("$.content", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.content[0].accountId").value(accountId.toString()))
+                .andExpect(jsonPath("$.content[0].accountType").value("prospect"))
+                .andExpect(jsonPath("$.content[0].status").value("Active"));
     }
 
     @Test
-    @DisplayName("GET /api/accounts?ownerId= defaults the status filter to Active")
-    void listByOwnerDefaultsToActive() throws Exception {
-        when(accountService.getByOwner(ownerId, AccountStatus.ACTIVE)).thenReturn(List.of());
+    @DisplayName("POST /api/accounts/search forwards the status filter")
+    void listByStatus() throws Exception {
+        AccountSearchCriteriaDTO criteria = new AccountSearchCriteriaDTO(AccountStatus.INACTIVE, null, null, null, null, null);
+        when(accountService.search(eq(criteria))).thenReturn(new PageImpl<>(List.of()));
 
-        mockMvc.perform(get("/api/accounts").param("ownerId", ownerId.toString()))
+        mockMvc.perform(post("/api/accounts/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(criteria)))
                 .andExpect(status().isOk());
 
-        verify(accountService).getByOwner(ownerId, AccountStatus.ACTIVE);
-        verify(accountService, never()).getAll();
+        verify(accountService).search(eq(criteria));
     }
 
     @Test
-    @DisplayName("GET /api/accounts?ownerId=&status= honours an explicit status")
-    void listByOwnerWithStatus() throws Exception {
-        when(accountService.getByOwner(ownerId, AccountStatus.INACTIVE)).thenReturn(List.of());
+    @DisplayName("POST /api/accounts/search forwards every filter")
+    void listByAllFilters() throws Exception {
+        AccountSearchCriteriaDTO criteria = new AccountSearchCriteriaDTO(
+                AccountStatus.ACTIVE, "Acme", "Acme Trading", "REG-1", EmployeeBand.BAND_11_50, null);
+        when(accountService.search(eq(criteria))).thenReturn(new PageImpl<>(List.of()));
 
-        mockMvc.perform(get("/api/accounts")
-                        .param("ownerId", ownerId.toString())
-                        .param("status", "INACTIVE"))
+        mockMvc.perform(post("/api/accounts/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(criteria)))
                 .andExpect(status().isOk());
 
-        verify(accountService).getByOwner(ownerId, AccountStatus.INACTIVE);
+        verify(accountService).search(eq(criteria));
+    }
+
+    @Test
+    @DisplayName("POST /api/accounts/search forwards pagination and sort from the request body")
+    void listPaged() throws Exception {
+        AccountSearchCriteriaDTO criteria = new AccountSearchCriteriaDTO(
+                null, null, null, null, null, new PageRequestDTO(1, 5, null, null));
+        when(accountService.search(eq(criteria)))
+                .thenReturn(new PageImpl<>(List.of(accountDTO(AccountStatus.ACTIVE))));
+
+        mockMvc.perform(post("/api/accounts/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(criteria)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", org.hamcrest.Matchers.hasSize(1)));
+
+        verify(accountService).search(eq(criteria));
     }
 
     @Test

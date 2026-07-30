@@ -1,9 +1,9 @@
 package com.crm.account.service;
 
-import com.crm.account.domain.enums.AccountStatus;
 import com.crm.account.dto.AccountDTO;
+import com.crm.account.dto.AccountSearchCriteriaDTO;
+import org.springframework.data.domain.Page;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface AccountService {
@@ -14,9 +14,8 @@ public interface AccountService {
 
     AccountDTO getById(UUID accountId);
 
-    List<AccountDTO> getAll();
-
-    List<AccountDTO> getByOwner(UUID ownerId, AccountStatus status);
+    /** Filter fields on criteria are optional (null/blank is ignored); pagination defaults if omitted. */
+    Page<AccountDTO> search(AccountSearchCriteriaDTO criteria);
 
     /** Sets the account to Inactive and stamps {@code deactivatedAt}. */
     AccountDTO deactivate(UUID accountId);
