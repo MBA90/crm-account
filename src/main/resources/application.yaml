@@ -27,6 +27,12 @@ spring:
     change-log: classpath:db/changelog/master.xml
     default-schema: crm_account
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/crm-realm
+
 server:
   port: 8202
 
