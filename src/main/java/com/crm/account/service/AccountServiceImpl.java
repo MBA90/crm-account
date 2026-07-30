@@ -3,16 +3,19 @@ package com.crm.account.service;
 import com.crm.account.domain.Account;
 import com.crm.account.domain.enums.AccountStatus;
 import com.crm.account.dto.AccountDTO;
+import com.crm.account.dto.AccountSearchCriteriaDTO;
 import com.crm.account.exception.DuplicateResourceException;
 import com.crm.account.exception.ResourceNotFoundException;
 import com.crm.account.mapper.AccountMapper;
 import com.crm.account.repository.AccountRepository;
+import com.crm.account.repository.AccountSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -61,18 +64,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AccountDTO> getAll() {
-        return accountRepository.findByErasedAtIsNull().stream()
-                .map(accountMapper::toDTO)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<AccountDTO> getByOwner(UUID ownerId, AccountStatus status) {
-        return accountRepository.findByOwnerIdAndStatusAndErasedAtIsNull(ownerId, status).stream()
-                .map(accountMapper::toDTO)
-                .toList();
+    public Page<AccountDTO> search(AccountSearchCriteriaDTO criteria) {
+        Specification<Account> spec = Specification.allOf(
+                AccountSpecifications.hasStatus(criteria.status()),
+                AccountSpecifications.legalNameContains(criteria.legalName()),
+                AccountSpecifications.tradeNameContains(criteria.tradeName()),
+                AccountSpecifications.hasRegistrationNo(criteria.registrationNo()),
+                AccountSpecifications.hasEmployeeBand(criteria.employeeBand()));
+        return accountRepository.findAll(spec, criteria.toPageable())
+                .map(accountMapper::toDTO);
     }
 
     @Override

@@ -1,10 +1,11 @@
 package com.crm.account.web.rest;
 
-import com.crm.account.domain.enums.AccountStatus;
 import com.crm.account.dto.AccountDTO;
+import com.crm.account.dto.AccountSearchCriteriaDTO;
 import com.crm.account.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,13 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,15 +29,9 @@ public class AccountController {
 
     private final AccountService accountService;
 
-    @GetMapping
-    public List<AccountDTO> list(
-            @RequestParam(required = false) UUID ownerId,
-            @RequestParam(required = false) AccountStatus status) {
-        if (ownerId != null) {
-            AccountStatus effectiveStatus = status != null ? status : AccountStatus.ACTIVE;
-            return accountService.getByOwner(ownerId, effectiveStatus);
-        }
-        return accountService.getAll();
+    @PostMapping("/search")
+    public Page<AccountDTO> search(@RequestBody AccountSearchCriteriaDTO criteria) {
+        return accountService.search(criteria);
     }
 
     @GetMapping("/{accountId}")

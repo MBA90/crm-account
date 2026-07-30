@@ -6,6 +6,8 @@ import com.crm.account.domain.enums.AccountStatus;
 import com.crm.account.domain.enums.AccountType;
 import com.crm.account.domain.enums.EmployeeBand;
 import com.crm.account.dto.AccountDTO;
+import com.crm.account.dto.AccountSearchCriteriaDTO;
+import com.crm.account.dto.PageRequestDTO;
 import com.crm.account.exception.DuplicateResourceException;
 import com.crm.account.exception.ResourceNotFoundException;
 import com.crm.account.mapper.AccountMapper;
@@ -19,6 +21,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
 import java.util.List;
@@ -217,34 +224,52 @@ class AccountServiceImplTest {
         }
 
         @Test
-        @DisplayName("getAll skips erased accounts")
-        void getAll() {
+        @DisplayName("search delegates to the repository with a specification and the default pageable")
+        void search() {
             Account entity = account(accountId);
             AccountDTO dto = accountDTO(accountId, AccountStatus.ACTIVE);
-            when(accountRepository.findByErasedAtIsNull()).thenReturn(List.of(entity));
+            Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+            when(accountRepository.findAll(any(Specification.class), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of(entity)));
             when(accountMapper.toDTO(entity)).thenReturn(dto);
 
-            assertThat(accountService.getAll()).containsExactly(dto);
+            AccountSearchCriteriaDTO criteria = new AccountSearchCriteriaDTO(
+                    AccountStatus.ACTIVE, "Acme", null, null, EmployeeBand.BAND_11_50, null);
+
+            assertThat(accountService.search(criteria)).containsExactly(dto);
+
+            verify(accountRepository).findAll(any(Specification.class), eq(pageable));
         }
 
         @Test
-        @DisplayName("getAll returns an empty list when nothing matches")
-        void getAllEmpty() {
-            when(accountRepository.findByErasedAtIsNull()).thenReturn(List.of());
+        @DisplayName("search returns an empty page when nothing matches")
+        void searchEmpty() {
+            Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+            when(accountRepository.findAll(any(Specification.class), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of()));
 
-            assertThat(accountService.getAll()).isEmpty();
+            AccountSearchCriteriaDTO criteria = new AccountSearchCriteriaDTO(null, null, null, null, null, null);
+
+            assertThat(accountService.search(criteria)).isEmpty();
         }
 
         @Test
-        @DisplayName("getByOwner filters by owner and status")
-        void getByOwner() {
+        @DisplayName("search honors explicit pagination and sort from the request body")
+        void searchWithExplicitPagination() {
             Account entity = account(accountId);
             AccountDTO dto = accountDTO(accountId, AccountStatus.ACTIVE);
-            when(accountRepository.findByOwnerIdAndStatusAndErasedAtIsNull(ownerId, AccountStatus.ACTIVE))
-                    .thenReturn(List.of(entity));
+            Pageable pageable = PageRequest.of(1, 5, Sort.by(Sort.Direction.ASC, "legalName"));
+            when(accountRepository.findAll(any(Specification.class), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of(entity)));
             when(accountMapper.toDTO(entity)).thenReturn(dto);
 
-            assertThat(accountService.getByOwner(ownerId, AccountStatus.ACTIVE)).containsExactly(dto);
+            AccountSearchCriteriaDTO criteria = new AccountSearchCriteriaDTO(
+                    null, null, null, null, null,
+                    new PageRequestDTO(1, 5, "legalName", Sort.Direction.ASC));
+
+            assertThat(accountService.search(criteria)).containsExactly(dto);
+
+            verify(accountRepository).findAll(any(Specification.class), eq(pageable));
         }
     }
 
@@ -279,7 +304,7 @@ class AccountServiceImplTest {
             ArgumentCaptor<Account> saved = ArgumentCaptor.forClass(Account.class);
             verify(accountRepository).save(saved.capture());
             assertThat(saved.getValue().getErasedAt()).isNotNull().isAfterOrEqualTo(before);
-            verify(accountRepository, never()).delete(any());
+            verify(accountRepository, never()).delete(any(Account.class));
         }
 
         @Test
