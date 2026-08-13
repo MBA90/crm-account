@@ -14,8 +14,14 @@
 	<properties>
 		<java.version>21</java.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
+		<crm-lib.version>1.0.0</crm-lib.version>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>com.crm</groupId>
+			<artifactId>crm-lib</artifactId>
+			<version>${crm-lib.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
